@@ -1,0 +1,13 @@
+# .gitignore
+
+# data files
+*.csv
+
+# R files
+.Rhistory
+
+# Rproj (for Rstudio)
+M_estimate.Rproj
+
+# directories
+.Rproj.user/
