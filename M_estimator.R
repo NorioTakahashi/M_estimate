@@ -11,10 +11,12 @@
 #' @param KK K (growth parameter)
 #' @param temp ambient water temperature in degree C
 #' @param size_len length in cm
+#' @param genus
+#' @param species
 #' 
 #' @importFrom FishLife Plot_taxa
 #' 
-#' @return estimated M value
+#' @return estimated M and M+-1SD values 
 #'  
 #' @examples Calc_M(whose = "pauly1_L", Linf = 200, KK = 0.5, temp = 12)
 #' 
@@ -23,12 +25,14 @@
 
 Calc_M <- function(
   
-  whose = "not_specified",
-  max_age = 0,
-  Linf = 0,  # in cm
-  KK = 0,
-  temp = 0, # in degree C
-  size_len = 0 # in cm
+  whose = NULL,
+  max_age = NULL,
+  Linf = NULL,  # in cm
+  KK = NULL,
+  temp = NULL, # in degree C
+  size_len = NULL, # in cm
+  genus = NULL,
+  species = NULL
   
   # -- available M estimators --
   # tanaka: Tanaka (1960)
@@ -43,78 +47,136 @@ Calc_M <- function(
   
 ){
   
-  nat_mort <- 0
+  nat_mort <- NULL
+  low_nat_mort <- NULL
+  upp_nat_mort <- NULL
   
-  if(whose=="tanaka"){
+  if(is.null(whose)){
+  
+    stop("name of M estimator was not specified")
+  
+  }else if(whose=="tanaka"){
     
-    if(max_age==0) warning("max_age given as 0 for tanaka")
-    
+    if(is.null(max_age)) stop("max_age was not given for tanaka")
+
     nat_mort <- 2.5/max_age
-    
+
   }else if(whose=="pauly1_L"){
     
-    if(Linf==0) warning("Linf given as 0 for pauly1_L")
-    if(KK==0) warning("KK given as 0 for pauly1_L")
-    if(temp==0) warning("temp given as 0 for pauly1_L")
+    if(is.null(Linf)) stop("Linf was not given for pauly1_L")
+    if(is.null(KK)) stop("KK was not given for pauly1_L")
+    if(is.null(temp)) stop("temp was not given for pauly1_L")
     
     nat_mort <- 0.9849 * Linf^(-0.279) * KK^0.6543 * temp^0.4634
     
   }else if(whose=="pauly_L_update"){
     
-    if(Linf==0) warning("Linf given as 0 for pauly_L_update")
-    if(KK==0) warning("KK given as 0 for pauly_L_update")
+    if(is.null(Linf)) stop("Linf was not given for pauly_L_update")
+    if(is.null(KK)) stop("KK was not given for pauly_L_update")
     
     nat_mort <- 4.118 * Linf^(-0.33) * KK^0.73
     
   }else if(whose=="jensen2"){
     
-    if(KK==0) warning("KK given as 0 for jensen2")
+    if(is.null(KK)) stop("KK was not given for jensen2")
     
     nat_mort <- 1.5*KK
     
   }else if(whose=="hoenig"){
     
-    if(max_age==0) warning("max_age given as 0 for hoenig")
+    if(is.null(max_age)) stop("max_age was not given for hoenig")
     
     nat_mort <- 4.3/max_age
     
   }else if(whose=="hoenig_update"){
     
-    if(max_age==0) warning("max_age given as 0 for hoenig_update")
+    if(is.null(max_age)) stop("max_age was not given for hoenig_update")
     
     nat_mort <- 4.899 * max_age^(-0.916)
     
   }else if(whose=="gislason1"){
     
-    if(size_len==0) warning("size_len given as 0 for gislason1")
-    if(Linf==0) warning("Linf given as 0 for gislason1")
-    if(KK==0) warning("KK given as 0 for gislason1")
+    if(is.null(size_len)) stop("size_len was not given for gislason1")
+    if(is.null(Linf)) stop("Linf was not given for gislason1")
+    if(is.null(KK)) stop("KK was not given for gislason1")
     
     nat_mort <- 1.73 * size_len^(-1.61) *  Linf^(1.44) * KK
     
   }else if(whose=="gislason2"){
     
-    if(size_len==0) warning("size_len given as 0 for gislason2")
-    if(Linf==0) warning("Linf given as 0 for gislason2")
-    if(KK==0) warning("KK given as 0 for gislason2")
+    if(is.null(size_len)) stop("size_len was not given for gislason2")
+    if(is.null(Linf)) stop("Linf was not given for gislason2")
+    if(is.null(KK)) stop("KK was not given for gislason2")
     
     nat_mort <- KK * (size_len/Linf)^(-1.5)
     
   }else if(whose=="thorson"){
     
-    Predict.org <- Plot_taxa( 
-      Search_species(Genus="Scomber",Species="japonicus")$match_taxonomy,
-      mfrow=c(2,2) )
-    
-    nat_mort <- exp(as.numeric(Predict.org[[1]]$Mean_pred["M"]))
+    if( !is.null(genus) & !is.null(species) ){
+      
+      Predict.org <- try(
+          FishLife::Plot_taxa( 
+            FishLife::Search_species(Genus = genus, Species = species)$match_taxonomy,
+            mfrow=c(2,2)
+          )
+      )
+      
+      if(class(Predict.org) != "try-error"){ # check whether M estimate at spp level is available
+        
+        nat_mort <- exp(as.numeric(Predict.org[[1]]$Mean_pred["M"]))
+        
+        log_M <- as.numeric(Predict.org[[1]]$Mean_pred["M"])
+        log_SD <- as.numeric(sqrt(diag(Predict.org[[1]]$Cov_pred))["M"])
+        
+        # mean M +- 1SD
+        low_nat_mort <- exp(log_M-log_SD)
+        upp_nat_mort <- exp(log_M+log_SD)
+        
+      }else{
+        
+        warning("M estimate at species level was not available, only at genus level for thorson")
+        
+        Predict.org <- try(
+          FishLife::Plot_taxa( 
+            FishLife::Search_species(Genus = genus)$match_taxonomy,
+            mfrow=c(2,2)
+          )
+        )
+        
+        if(class(Predict.org) != "try-error"){ # check whether M estimate at genus level is available
+          
+          nat_mort <- exp(as.numeric(Predict.org[[1]]$Mean_pred["M"]))
+          
+          log_M <- as.numeric(Predict.org[[1]]$Mean_pred["M"])
+          log_SD <- as.numeric(sqrt(diag(Predict.org[[1]]$Cov_pred))["M"])
+          
+          # mean M +- 1SD
+          low_nat_mort <- exp(log_M-log_SD)
+          upp_nat_mort <- exp(log_M+log_SD)
+          
+        }else{
+          
+          stop("M estimate at genus level was not available for thorson")
+          
+        }
+        
+      }
+      
+    }else{
+      
+      stop("genus and species names were not given for thorson")
+      
+    }
     
   }else{
     
-    warning("name of M estimator was not specified or was mis-specified")
+    stop("name of M estimator was mis-specified")
     
   }
   
-  return(nat_mort)
+  M_estimate <- list(M = nat_mort, M_1SD = c(low_nat_mort, upp_nat_mort))
+  
+  return(M_estimate)
   
 }
 
