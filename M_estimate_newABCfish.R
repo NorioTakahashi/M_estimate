@@ -161,10 +161,10 @@ for (ii in 1:nrow(bparam)) {
   
   df <- rbind(df, wdf)
   
-  df <- df %>%
-    filter(jname != "dummy")
-  
 }
+
+df <- df %>%
+  filter(jname != "dummy")
 
 df %>% 
   write_excel_csv("M_estimate_newABCfish.csv") # note!!: encoding for Japanese characters
