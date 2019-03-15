@@ -50,6 +50,7 @@ Calc_M <- function(
   nat_mort <- NULL
   low_nat_mort <- NULL
   upp_nat_mort <- NULL
+  FishLife_estimate_taxon_level <- NULL
   
   if(is.null(whose)){
   
@@ -132,6 +133,8 @@ Calc_M <- function(
         low_nat_mort <- exp(log_M-log_SD)
         upp_nat_mort <- exp(log_M+log_SD)
         
+        FishLife_estimate_taxon_level <- "Species"
+        
       }else{
         
         warning("M estimate at species level was not available, only at genus level for thorson")
@@ -154,6 +157,8 @@ Calc_M <- function(
           low_nat_mort <- exp(log_M-log_SD)
           upp_nat_mort <- exp(log_M+log_SD)
           
+          FishLife_estimate_taxon_level <- "Genus"
+          
         }else{
           
           stop("M estimate at genus level was not available for thorson")
@@ -174,9 +179,13 @@ Calc_M <- function(
     
   }
   
-  M_estimate <- list(M = nat_mort, M_1SD = c(low_nat_mort, upp_nat_mort))
+  M_estimate <- list(
+    M = nat_mort,
+    M_1SD = c(low_nat_mort, upp_nat_mort),
+    FishLife_estimate_taxon_level = FishLife_estimate_taxon_level
+  )
   
-  return(M_estimate)
+  return( M_estimate )
   
 }
 
