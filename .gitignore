@@ -1,7 +1,7 @@
 # .gitignore
 
 # data files
-*.csv
+#*.csv
 
 # R files
 .Rhistory
