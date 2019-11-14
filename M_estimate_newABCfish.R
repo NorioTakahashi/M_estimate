@@ -48,9 +48,11 @@ vonBertalanffy <- function(
 
 #### biological parameters values
 
-guess_encoding("bio_param.csv")
+#guess_encoding("bio_param.csv")
+guess_encoding("bio_param_191114.csv")
 
-bparam <- read_csv("bio_param.csv", locale = locale(encoding = "Shift_JIS"))
+#bparam <- read_csv("bio_param.csv", locale = locale(encoding = "Shift_JIS"))
+bparam <- read_csv("bio_param_191114.csv", locale = locale(encoding = "Shift_JIS"))
 head(bparam)
 str(bparam)
 glimpse(bparam)
